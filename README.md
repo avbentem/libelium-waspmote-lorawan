@@ -1,0 +1,229 @@
+# Archived code for 2016 Libelium Waspmote PRO v1.2 with Gas Sensor Board v2.0 and LoRaWAN
+
+This is just an archive of an Arduino sketch (and its required development tools), used to get more details from a
+Libelium Waspmote "Plug & Sense!" Smart Environment device as used by the City of Haarlem from May 2016 until
+October 2017.
+
+## Contents
+
+- [Code quality](#code-quality)
+- [Sensor quality](#sensor-quality)
+- [Hardware configuration](#hardware-configuration)
+- [Project contents](#project-contents)
+- [LoRaWAN](#lorawan)
+  - [Registering with The Things Network](#registering-with-the-things-network)
+  - [Uplink payload format](#uplink-payload-format)
+  - [TTN Payload function](#ttn-payload-function)
+  - [RN2483 known issues](#rn2483-known-issues)
+- [Programming using the Waspmote PRO IDE v04](#programming-using-the-waspmote-pro-ide-v04)
+  - [Installing the correct IDE](#installing-the-correct-ide)
+  - [Enabling debug logging](#enabling-debug-logging)
+  - [Using the LEDs](#using-the-leds)
+  - [Waspmote IDE known issues](#waspmote-ide-known-issues)
+
+
+## Code quality
+
+This is by no means intended to be production-ready software. Things that come to mind:
+
+- No power optimization has been done, at all. Like maybe the main board can sleep while the sensor board is awaiting
+  the initialization of a sensor? Maybe one can take measurements from one sensor while another is already initializing?
+- The used LoRaWAN packet format allows for ridiculously accurate temperature readings, and for negative values for
+  atmospheric pressure and NO<sub>2</sub>. All this will/should not happen, and hence is not quite efficient.
+- Only use the LED for the first few measurements after a restart.
+- Only take measurements when the battery level is good.
+- Allow for remote configuration, using downlinks. (Store remote settings in non-volatile memory to survive restarts.)
+- Allow for remotely restarting the device to join another LoRaWAN network.
+- Calculate the measurement interval based on the start of measurements, rather than time between measurements.
+- Confirm that the retry-until-success in the `setLoRaWAN` helper functions does not cause problems.
+
+Be sure to read the full documentation as provided by Libelium; this sketch was merely based on examples without diving
+into the technical documentation too much.
+
+
+## Sensor quality
+
+Two of these devices were used in the field from May 2016 until October 2017. Their hardware was already outdated when
+first installed, and never gave us any reliable results. One unit broke down due to external factors, and the other was
+taken into the office to see if its output could be improved by using different settings, but to no avail.
+
+The source code as used in the field was never released by an intermediate supplier. But peeking into its serial output
+revealed that for each sensor it was taking 10 samples, each 1 second apart, after which only the mean (average) value
+was transmitted. But the serial output also proved that the actual samples often showed a large variation. Rather than
+the mean, this sketch determines the median to discard the outliers, and also sends the minimum and maximum values for
+analysis. But as even temperature measurements would often show large variations within only 10 seconds, the device was
+declared crap and this sketch has never been used in the field.
+
+So, I do not endorse the early 2016 device, as its measurements were really bad. Later models may be okay, but I have
+not used those. The control hardware is quite nice, with great support for deep sleep and watchdog timers, and even
+offering a real-time clock. So if the sensors have meanwhile improved, and when not using the generated code, then this
+might be a nice unit.
+
+Beware that reported NO<sub>2</sub> values will always need to be compensated for temperature and atmospheric pressure.
+This sketch simply transmits the reported values without any further postprocessing.
+
+
+## Hardware configuration
+
+Socket configuration for this sketch:
+
+- A: temperature, 9203, MCP9700A
+- B: atmospheric pressure, 9250, MPX4115A
+- D: NO<sub>2</sub> 9238-Pb, MiCS-2714; https://www.libelium.com/forum/viewtopic.php?f=28&t=22007&p=63548#p63568
+
+The LoRaWAN module identified itself as `RN2483 1.0.1 Dec 15 2015 09:38:09`.
+
+The NO<sub>2</sub> sensor needs some parameters to be set, typically through some calibration. Without calibration,
+neither the documentation nor the support forum are helpful:
+
+-  Gain: depends on the concentrations to be measured; changing the gain keeps the sensor from getting saturated.
+
+  > As a general rule, gain will be fixed at 1 in almost every application, only in very specific situations, such as
+  > operation in the limits of the sensor range, it will be necessary a different value.
+
+- Load resistance: depends on the actual calibration.
+
+  > Recommended values of load resistor: NO2 20 KOhm typical to 100K
+
+Also, the NO<sub>2</sub> sensor needs to be pre-heated for at least 30 seconds.
+
+
+## Project contents
+
+ - [src/waspmote-otaa](./src/waspmote-otaa): the actual sketch and its dependencies.
+ - [src/generated](./src/generated): the sketch as generated by a Libelium tool, given the sensor configuration. As the
+   tool did not support LoRaWAN, and the code yields a very verbose text-based payload, this is only included as
+   documentation.
+ - [tools](./tools): the outdated Libelium Waspmote PRO IDE for Windows and OS X/macOS, and USB drivers.
+ - [docs](./docs): some outdated Libelium documentation, valid for this configuration.
+
+
+## LoRaWAN
+
+### Registering with The Things Network
+
+To register the device with The Things Network:
+
+- Use the Waspmote PRO IDE to upload the sketch, and peek into the serial output to see its hardware Device EUI.
+- Go to https://console.thethingsnetwork.org
+- Register an application. This will get you a public AppEUI.
+- Register a new OTAA device to the application, using the device's EUI. This will get you a device-specific AppKey.
+- Copy the application's public AppEUI and the device's secret AppKey into the sketch.
+- Upload the updated sketch.
+
+### Uplink payload format
+
+The values are sent in an 18 bytes MSB format. All values, except the battery level, are signed 16 bits integers where
+their original float value has been multiplied by 100 to retain 2 decimals.
+
+| bytes | data
+| ----- | ----------------------------------------------------------------------------
+| 00-05 | 3 x 16 bits minimum, median and maximum values for temperature, Celcius
+| 06-11 | 3 x 16 bits minimum, median and maximum values for atmospheric pressure, kPa
+| 12-17 | 3 x 16 bits minimum, median and maximum values for NO<sub>2</sub>, ppm
+| 18    | 8 bits unsigned battery level, percentage
+
+This is not at all optimal:
+
+- The decimals in the temperature readings are probably not very accurate and can be discarded, maybe allowing one
+  to limit temperature readings to use 3 x 8 bits.
+- Readings for pressure and NO<sub>2</sub> can, if all is well, not be negative.
+- After determining that the readings are okay, one should stop sending the minimum and maximum values.
+
+### TTN Payload function
+
+To decode the values back into their original values:
+
+```javascript
+function Decoder(bytes, port) {
+  var i = 0;
+
+  function nextFloat() {
+    // Sign-extend to 32 bits to support negative values, by shifting 24 bits
+    // (too far) to the left, followed by a sign-propagating right shift:
+    return (bytes[i++]<<24>>16 | bytes[i++]) / 100;
+  }
+
+  function nextMinMedianMax() {
+    return {
+      min: nextFloat(),
+      median: nextFloat(),
+      max: nextFloat()
+    }
+  }
+
+  return {
+    temperature: nextMinMedianMax(),
+    pressure: nextMinMedianMax(),
+    no2: nextMinMedianMax(),
+    battery: bytes[i++]
+  }
+}
+```
+
+### RN2483 known issues
+
+- After a factory reset, make sure to set (dummy) values for DevAddr, AppSKey and NwkSKey, for otherwise calling
+  `LoRaWAN.saveConfig` (actually `mac save`) does not save the OTAA settings, and/or `LoRaWAN.joinABP` does not
+  recognize that they were saved.
+- Limited tests show that joining on low data rates might be troublesome, and that ADR might not be working. This has
+  not been investigated.
+
+
+## Programming using the Waspmote PRO IDE v04
+
+### Installing the correct IDE
+
+This device needs the old API, version 023, which is not included in the latest Waspmote PRO IDE. One could manually
+install it, but that's probably not worth the effort. The old IDE also does not support C++11 out of the box (while
+the latest IDE does), but even though that adds support for lambdas which would be a nice replacement of the function
+pointers used in `_execLoRaWAN` now, that's probably not worth the effort either.
+
+So, use the December 2013 Waspmote PRO IDE v04, as availble in the [tools](./tools) folder.
+
+Beware that Libelium warns one should never replace its proprietary bootloader, so beware when using different tooling:
+
+> The microcontroller Flash (128KB) contains both the uploaded program and the bootloader. The bootloader is a small
+> program which is executed at the beginning and proceeds to run the uploaded program. Libelium provides the Waspmote
+> IDE which won’t permit rewriting the bootloader.
+>
+> Do **NOT** use other IDEs, **only** the Waspmote IDE is recommended.
+>
+> Libelium does not recommend to implement Watchdog timers as some users have had some problems and the microcontroller
+> has needed to be re-flashed.
+>
+> If the bootloader is overwritten by using any of the previous practices, the warranty will be voided.
+
+### Enabling debug logging
+
+Even when enabling debugging, the Waspmote UART library hides most of the responses as soon as it finds a match. Like
+to see the actual RN2483 version information, enabling debugging does not help. Instead, one needs:
+
+```cpp
+uint8_t result = LoRaWAN.sendCommand("sys get ver\r\n", "\r\n", "invalid_param");
+```
+
+...which tells the `WaspUART` superclass to send `sys get ver` and then wait for either a newline (as returned after the
+RN2483 has printed its version details) or for the `invalid_param` error.
+
+To enable debugging see the header files in the IDE's `hardware/waspmote/cores/waspmote-api` folder, specifically the
+file `WaspUART.h` for debugging of its derived `WaspLoRaWAN`.
+
+### Using the LEDs
+
+The Waspmote being installed in a Plug & Sense! product, the blue LED in its power button is actually addressed using
+`Utils.blinkGreenLED`, not using `Utils.externalLEDBlink`.
+
+### Waspmote IDE known issues
+
+- Folder names should not include dashes.
+
+- On OS X and macOS, the old IDE needs the legacy Java SE 6 runtime; OS X and macOS will prompt one to download from
+  https://support.apple.com/kb/DL1572 However, though the names of the downloads are always `javaforosx.dmg`, an old
+  2017 download from that very URL will not work for macOS 10.14 Mojava. After upgrading macOS make sure to download a
+  more recent release from the same URL.
+
+- Using the ancient Java, one will see errors like the following, but all works fine:
+
+  > Exception in thread "AWT-EventQueue-0" java.lang.RuntimeException: Non-Java exception raised, not handled!
+  > (Original problem: Deprecated in 10_12... DO NOT EVER USE CGSEventRecord directly. Bad things, man.... bad things.)
