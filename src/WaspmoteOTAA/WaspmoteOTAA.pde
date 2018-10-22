@@ -363,7 +363,7 @@ uint8_t takeMeasurements() {
     SensorGasv20.setSensorMode(SENS_OFF, SENS_PRESSURE);
 
     // NO2
-    USB.printf("  - NO2 (waiting %u seconds for initialization)\n", no2InitSeconds);
+    USB.printf("  - NO2 (waiting %u seconds for initialization/preheating)\n", no2InitSeconds);
     SensorGasv20.configureSensor(SENS_SOCKET3B, no2Gain, no2Resistance);
     SensorGasv20.setSensorMode(SENS_ON, SENS_SOCKET3B);
     USB.flush();

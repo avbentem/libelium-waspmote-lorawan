@@ -66,13 +66,19 @@ the mean, this sketch determines the median to discard the outliers, and also se
 analysis. But as even temperature measurements would often show large variations within only 10 seconds, the device was
 declared crap and this sketch has never been used in the field.
 
-So, I do not endorse the early 2016 device, as its measurements were really bad. Later models may be okay, but I have
-not used those. The control hardware is quite nice, with great support for deep sleep and watchdog timers, and even
-offering a real-time clock. So if the sensors have meanwhile improved, and when not using the generated code, then this
-might be a nice unit.
+So, I do not endorse the early 2016 device, as measurements for our two test devices were really bad. Later models may
+be okay, but I have not used those. The control hardware is quite nice, with great support for deep sleep and watchdog
+timers, and even offering a real-time clock. So if the sensors have meanwhile improved, and when not using generated
+code, then this might be a nice unit.
 
-Beware that reported NO<sub>2</sub> values will always need to be compensated for temperature and atmospheric pressure.
-This sketch simply transmits the reported values without any further postprocessing.
+In March 2017, Smart Environment (which is the Plug & Sense! version for the Gases sensor board) was discontinued, in
+favor of Smart Environment PRO (Gases PRO) and Smart Cities PRO, both of which were already available when our supplier
+got us the old version instead. Browsing recent documentation surely makes them look much better.
+
+:warning: Note that the reported NO<sub>2</sub> values are just voltages. When calibration parameters are known, one
+could use `SensorGasv20.calculateResistance` and `SensorGasv20.calculateConcentration` to get a PPM value. Next, that
+value should also be compensated for temperature and atmospheric pressure (which is exactly why this combination of
+sensors was selected). This sketch simply transmits the voltage values without any such postprocessing.
 
 
 ## Hardware configuration
@@ -138,10 +144,10 @@ their original float value has been multiplied by 100 to retain 2 decimals.
 
 | bytes | data
 | :---: | ----------------------------------------------------------------------------
-|  0-5  | 3 × 16 bits minimum, median and maximum values for temperature, Celcius
-|  6-11 | 3 × 16 bits minimum, median and maximum values for atmospheric pressure, kPa
-| 12-17 | 3 × 16 bits minimum, median and maximum values for NO<sub>2</sub>, ppm
-|   18  | 8 bits unsigned battery level, percentage
+|  1-7  | 3 × 16 bits minimum, median and maximum values for temperature, Celcius
+|  7-12 | 3 × 16 bits minimum, median and maximum values for atmospheric pressure, kPa
+| 13-18 | 3 × 16 bits minimum, median and maximum values for NO<sub>2</sub>, Volt
+|   19  | 8 bits unsigned battery level, percentage
 
 This is not at all optimal:
 
