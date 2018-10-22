@@ -253,7 +253,18 @@ void printMemory() {
 
 void setup() {
     USB.ON();
-    USB.println(F("Configuring LoRaWAN module"));
+    USB.print(F("Configuring LoRaWAN module "));
+
+    RTC.ON();
+    // Small stabilization delay
+    delay(100);
+    // If one cares for the correct time settings then just uncomment the line below, set some near-future value,
+    // upload, restart the device around the expected time, and then upload the same sketch without the next line.
+    // Format: [yy:mm:dd:dow:hh:mm:ss] where dow=1 for Sunday, or 7 for Saturday.
+    // RTC.setTime("18:10:22:02:19:00:00");
+    USB.println(RTC.getTime());
+    RTC.OFF();
+
     setLoRaWAN(F("  - Switch on"), &WaspLoRaWAN::ON, socket);
     setLoRaWAN(F("  - Factory reset"), &WaspLoRaWAN::factoryReset);
     // Print the hardware EUI required to register the device at The Things Network
@@ -390,9 +401,17 @@ uint8_t takeMeasurements() {
 void loop() {
     Utils.blinkGreenLED(500, 5);
 
-    USB.println(F("\nTaking measurements"));
+    // Turn on the RTC to avoid possible conflicts in the I2C bus. See "6. Board configuration and programming" in
+    // "gases-sensor-board-2.0.pdf". The RTC will be powered off again when going into deep sleep.
+    RTC.ON();
+    // Small stabilization delay
+    delay(100);
+
+    USB.print(F("\nTaking measurements "));
+    USB.println(RTC.getTime());
 
     uint8_t dataLen = takeMeasurements();
+
     // In the Waspmote API v23, data must be passed as a HEX string.
     char text[100];
     Utils.hex2str((uint8_t *) data, text, dataLen);
@@ -435,7 +454,10 @@ void loop() {
 
     USB.print(F("\nEntering deep sleep for "));
     USB.println(sleepTime);
+    USB.flush();
     // Deep sleep with all sensors off
     PWR.deepSleep(sleepTime, RTC_OFFSET, RTC_ALM1_MODE1, ALL_OFF);
+    // UART is closed during sleep, so open it again
+    USB.ON();
     USB.println("\nWake up");
 }
