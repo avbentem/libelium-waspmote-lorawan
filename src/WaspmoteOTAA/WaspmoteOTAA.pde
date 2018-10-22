@@ -235,7 +235,7 @@ void setLoRaWAN(const __FlashStringHelper *msg, uint8_t(WaspLoRaWAN::*h)(uint8_t
 }
 
 void printFloat(const __FlashStringHelper *msg, float f) {
-    // USB.printf does not Flash-strings, nor floats
+    // USB.printf does not support Flash-strings, nor floats
     USB.print(msg);
     char s[10];
     Utils.float2String(f, s, 2);
@@ -292,6 +292,7 @@ void setup() {
     setLoRaWAN(F("  - Set AppKey"), &WaspLoRaWAN::setAppKey, APP_KEY);
     setLoRaWAN(F("  - Set data rate"), &WaspLoRaWAN::setDataRate, INITIAL_DR);
     setLoRaWAN(F("  - Set ADR"), &WaspLoRaWAN::setADR, "on");
+    // Save the intermediate configuration to allow setLoRaWAN to reset the LoRaWAN module when joinOTAA fails
     setLoRaWAN(F("  - Save configuration"), &WaspLoRaWAN::saveConfig);
     setLoRaWAN(F("  - Join OTAA"), &WaspLoRaWAN::joinOTAA);
     setLoRaWAN(F("  - Save configuration"), &WaspLoRaWAN::saveConfig);
