@@ -144,7 +144,7 @@ their original float value has been multiplied by 100 to retain 2 decimals.
 
 | bytes | data
 | :---: | ----------------------------------------------------------------------------
-|  1-7  | 3 × 16 bits minimum, median and maximum values for temperature, Celcius
+|  1-6  | 3 × 16 bits minimum, median and maximum values for temperature, Celcius
 |  7-12 | 3 × 16 bits minimum, median and maximum values for atmospheric pressure, kPa
 | 13-18 | 3 × 16 bits minimum, median and maximum values for NO<sub>2</sub>, Volt
 |   19  | 8 bits unsigned battery level, percentage
