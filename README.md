@@ -114,9 +114,9 @@ Also, the NO<sub>2</sub> sensor needs to be pre-heated for at least 30 seconds.
    tool did not support LoRaWAN, and the code yields a very verbose text-based payload, this is only included as
    documentation.
 
- - [tools](./tools): the outdated Libelium Waspmote PRO IDE for Windows and OS X/macOS, and USB drivers.
+ - [tools](./tools): the legacy Libelium Waspmote PRO IDE for Windows and OS X/macOS, and USB drivers.
 
- - [docs](./docs): some outdated Libelium documentation, valid for this configuration.
+ - [docs](./docs): some legacy Libelium documentation, valid for this configuration.
 
 
 ## LoRaWAN
@@ -235,8 +235,8 @@ Beware that Libelium warns one should never replace its proprietary bootloader, 
   > #### Gases Board 2.0
   > Remember that when turning off the board the configuration of the sensor stages will be lost.
 
-- Most examples do not enable the RTC, but "Board configuration and programming" in "gases-sensor-board-2.0.pdf"
-  states:
+- Most examples do not enable the RTC, and peeking into the `WaspSensorGas_v20` library code seems to suggest that
+  the RTC is enabled if needed, but "Board configuration and programming" in "gases-sensor-board-2.0.pdf" states:
 
   > Turn on the RTC to avoid possible conflicts in the I2C bus.
 
