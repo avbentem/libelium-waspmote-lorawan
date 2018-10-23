@@ -191,7 +191,8 @@ void _execLoRaWAN(const __FlashStringHelper *msg,
             break;
         }
 
-        blinkLedError(stage);
+        // As we're using blinkLed(stage++), the current value for stage is one too high:
+        blinkLedError(stage - 1);
         if (result != LORAWAN_ANSWER_ERROR) {
             // When not resetting, then the module does not seem to recover from LORAWAN_NO_ANSWER. For OTAA during
             // testing only LORAWAN_ANSWER_ERROR (recoverable twice) and LORAWAN_NO_ANSWER occurred.
@@ -471,7 +472,8 @@ void loop() {
     printLoRaWANResult(result);
 
     if (result != LORAWAN_ANSWER_OK) {
-        blinkLedError(stage);
+        // As we're using blinkLed(stage++), the current value for stage is one too high:
+        blinkLedError(stage - 1);
     } else {
         if (LoRaWAN._dataReceived) {
             USB.print(F("  - Received downlink on port "));
