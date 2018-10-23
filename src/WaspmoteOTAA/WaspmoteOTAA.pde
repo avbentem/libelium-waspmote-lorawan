@@ -4,8 +4,8 @@
  *
  * Hardware configuration of sockets:
  *   - A = temperature, 9203, MCP9700A
- *   - B = atmospheric pressure 9250, MPX4115A
- *   - D = NO2 9238-Pb, MiCS-2714 -- https://www.libelium.com/forum/viewtopic.php?f=28&t=22007&p=63548#p63568
+ *   - B = atmospheric pressure, 9250, MPX4115A
+ *   - D = NO2, 9238-Pb, MiCS-2714 -- https://www.libelium.com/forum/viewtopic.php?f=28&t=22007&p=63548#p63568
  *
  * Use of this source code is governed by the MIT license that can be found in the LICENSE file.
  */
