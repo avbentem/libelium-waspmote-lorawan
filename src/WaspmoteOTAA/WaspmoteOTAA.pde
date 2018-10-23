@@ -80,9 +80,9 @@ uint8_t no2InitSeconds = 30;
 uint8_t no2Gain = 1;
 
 /**
- * Load resistance for the NO2 sensor, 1 to 100 kOhm. This depends on calibration and is typically 20.
+ * Load resistor for the NO2 sensor, 1 to 100 kOhm. This depends on calibration and is typically 20.
  */
-float no2Resistance = 20;
+float no2LoadResistor = 20.0;
 
 
 // ====================================================================================================================
@@ -298,12 +298,13 @@ void setup() {
     setLoRaWAN(F("  - Save configuration"), &WaspLoRaWAN::saveConfig);
 }
 
-void readSensor(uint8_t sensor, RunningMedian &samples) {
+void readSensor(uint16_t sensor, RunningMedian &samples) {
     USB.print(F("  "));
     samples.clear();
     // Initiate a dummy reading for analog-to-digital converter channel selection
     SensorGasv20.readValue(sensor);
     for (uint8_t i = 0; i < samples.getSize(); i++) {
+        // Returns the voltage read at the sensor output or load resistor, or -1.0 for error in sensor type selection
         float f = SensorGasv20.readValue(sensor);
         samples.add(f);
         Utils.blinkGreenLED();
@@ -343,7 +344,7 @@ uint8_t takeMeasurements() {
 
     // Turn on the sensor board
     SensorGasv20.ON();
-    USB.printf("  - Power on sensor board (waiting %u seconds for initialization)\n", boardInitSeconds);
+    USB.printf("  - Power on sensor board (waiting %u seconds for stabilization)\n", boardInitSeconds);
     USB.flush();
     delay(1000L * boardInitSeconds);
 
@@ -363,8 +364,11 @@ uint8_t takeMeasurements() {
     SensorGasv20.setSensorMode(SENS_OFF, SENS_PRESSURE);
 
     // NO2
-    USB.printf("  - NO2 (waiting %u seconds for initialization/preheating)\n", no2InitSeconds);
-    SensorGasv20.configureSensor(SENS_SOCKET3B, no2Gain, no2Resistance);
+    char no2LoadResistorString[6];
+    Utils.float2String(no2LoadResistor, no2LoadResistorString, 2);
+    USB.printf("  - NO2 (gain %u; load resistor %s kOhm; waiting %u seconds stabilization/preheating)\n",
+               no2Gain, no2LoadResistorString, no2InitSeconds);
+    SensorGasv20.configureSensor(SENS_SOCKET3B, no2Gain, no2LoadResistor);
     SensorGasv20.setSensorMode(SENS_ON, SENS_SOCKET3B);
     USB.flush();
     delay(1000L * no2InitSeconds);

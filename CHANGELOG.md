@@ -4,7 +4,9 @@
 
 ### Fixes
 
-- Enable RTC to avoid possible conflicts in the I2C bus.
+- Fix reading voltage of NO2 sensor.
+
+- Enable RTC to avoid possible conflicts in the I2C bus (though that might not be required).
 
 - Improve documentation.
 
