@@ -91,14 +91,36 @@ float no2LoadResistor = 20.0;
 
 
 /**
- * Socket (UART) to which the LoRaWAN module is connected
+ * Socket (UART) to which the LoRaWAN module is connected.
  */
 uint8_t socket = SOCKET0;
 
 /**
- * Buffer to holdthe binary LoRaWAN uplink. MSB.
+ * Current stage of the script.
+ */
+uint8_t stage = 1;
+
+/**
+ * Buffer to hold the binary LoRaWAN uplink. MSB.
  */
 byte data[50];
+
+void flashLed() {
+    Utils.blinkGreenLED(25);
+}
+
+void blinkLed(uint8_t count) {
+    delay(500);
+    Utils.blinkGreenLED(200, count);
+    delay(500);
+}
+
+void blinkLedError(uint8_t count) {
+    delay(500);
+    Utils.blinkGreenLED(3000);
+    Utils.blinkGreenLED(200, count);
+    delay(500);
+}
 
 void printLoRaWANResult(uint8_t result, char *charResult[] = NULL, uint32_t *intResult = NULL) {
     switch (result) {
@@ -153,8 +175,6 @@ void _execLoRaWAN(const __FlashStringHelper *msg,
 
     // loop until result is LORAWAN_ANSWER_OK
     while (1) {
-        Utils.blinkGreenLED(100, 1);
-
         USB.print(msg);
         uint8_t result;
         if (f) {
@@ -170,6 +190,8 @@ void _execLoRaWAN(const __FlashStringHelper *msg,
         if (result == LORAWAN_ANSWER_OK) {
             break;
         }
+
+        blinkLedError(stage);
         if (result != LORAWAN_ANSWER_ERROR) {
             // When not resetting, then the module does not seem to recover from LORAWAN_NO_ANSWER. For OTAA during
             // testing only LORAWAN_ANSWER_ERROR (recoverable twice) and LORAWAN_NO_ANSWER occurred.
@@ -252,6 +274,9 @@ void printMemory() {
 }
 
 void setup() {
+    stage = 1;
+    blinkLed(stage++);
+
     USB.ON();
     USB.print(F("Configuring LoRaWAN module "));
 
@@ -294,8 +319,10 @@ void setup() {
     setLoRaWAN(F("  - Set ADR"), &WaspLoRaWAN::setADR, "on");
     // Save the intermediate configuration to allow setLoRaWAN to reset the LoRaWAN module when joinOTAA fails
     setLoRaWAN(F("  - Save configuration"), &WaspLoRaWAN::saveConfig);
+    blinkLed(stage++);
     setLoRaWAN(F("  - Join OTAA"), &WaspLoRaWAN::joinOTAA);
     setLoRaWAN(F("  - Save configuration"), &WaspLoRaWAN::saveConfig);
+    blinkLed(stage++);
 }
 
 void readSensor(uint16_t sensor, RunningMedian &samples) {
@@ -307,7 +334,7 @@ void readSensor(uint16_t sensor, RunningMedian &samples) {
         // Returns the voltage read at the sensor output or load resistor, or -1.0 for error in sensor type selection
         float f = SensorGasv20.readValue(sensor);
         samples.add(f);
-        Utils.blinkGreenLED();
+        flashLed();
         printFloat(F("  "), f);
         delay(1000);
     }
@@ -349,11 +376,13 @@ uint8_t takeMeasurements() {
     delay(1000L * boardInitSeconds);
 
     // Temperature
+    blinkLed(stage++);
     USB.println(F("  - Temperature"));
     RunningMedian temperatureSamples = RunningMedian(temperatureSampleCount);
     readSensor(SENS_TEMPERATURE, temperatureSamples);
 
     // Atmospheric pressure
+    blinkLed(stage++);
     USB.println(F("  - Atmospheric pressure"));
     SensorGasv20.setSensorMode(SENS_ON, SENS_PRESSURE);
     delay(30);
@@ -364,9 +393,10 @@ uint8_t takeMeasurements() {
     SensorGasv20.setSensorMode(SENS_OFF, SENS_PRESSURE);
 
     // NO2
+    blinkLed(stage++);
     char no2LoadResistorString[6];
     Utils.float2String(no2LoadResistor, no2LoadResistorString, 2);
-    USB.printf("  - NO2 (gain %u; load resistor %s kOhm; waiting %u seconds stabilization/preheating)\n",
+    USB.printf("  - NO2 (gain %u; load resistor %s kOhm; waiting %u seconds for stabilization/preheating)\n",
                no2Gain, no2LoadResistorString, no2InitSeconds);
     SensorGasv20.configureSensor(SENS_SOCKET3B, no2Gain, no2LoadResistor);
     SensorGasv20.setSensorMode(SENS_ON, SENS_SOCKET3B);
@@ -388,7 +418,7 @@ uint8_t takeMeasurements() {
     USB.print(F("  "));
     // First dummy reading for analog-to-digital converter channel selection
     PWR.getBatteryLevel();
-    Utils.blinkGreenLED();
+    flashLed();
     uint8_t batteryLevel = PWR.getBatteryLevel();
     printInt(F("  "), batteryLevel);
     printFloat(F("% ("), PWR.getBatteryVolts());
@@ -404,7 +434,8 @@ uint8_t takeMeasurements() {
 }
 
 void loop() {
-    Utils.blinkGreenLED(500, 5);
+    stage = 1;
+    blinkLed(stage++);
 
     // Turn on the RTC to avoid possible conflicts in the I2C bus. See "6. Board configuration and programming" in
     // "gases-sensor-board-2.0.pdf". The RTC will be powered off again when going into deep sleep.
@@ -421,6 +452,7 @@ void loop() {
     char text[100];
     Utils.hex2str((uint8_t *) data, text, dataLen);
 
+    blinkLed(stage++);
     USB.println(F("\nSending measurements"));
     setLoRaWAN(F("  - Switch on LoRaWAN module"), &WaspLoRaWAN::ON, socket);
     setLoRaWAN(F("  - Set ABP keys"), &WaspLoRaWAN::joinABP);
@@ -438,7 +470,9 @@ void loop() {
     USB.print(F(": "));
     printLoRaWANResult(result);
 
-    if (result == LORAWAN_ANSWER_OK) {
+    if (result != LORAWAN_ANSWER_OK) {
+        blinkLedError(stage);
+    } else {
         if (LoRaWAN._dataReceived) {
             USB.print(F("  - Received downlink on port "));
             USB.println(LoRaWAN._port, DEC);
@@ -454,8 +488,6 @@ void loop() {
     setLoRaWAN(F("  - Switch off LoRaWAN module"), &WaspLoRaWAN::OFF, socket);
 
     printMemory();
-
-    Utils.blinkGreenLED(500, 3);
 
     USB.print(F("\nEntering deep sleep for "));
     USB.println(sleepTime);
