@@ -154,6 +154,12 @@ This is not at all optimal:
 - The decimals in the temperature readings are probably not very accurate and can be discarded, maybe allowing one
   to limit temperature readings to use 3 × 8 bits.
 
+- Atmospheric pressure [should be](https://en.wikipedia.org/wiki/List_of_atmospheric_pressure_records_in_Europe) in
+  the range of 87.0 to 109.0, hence a variation of only 22 kPa. With one decimal and an offset of 85 this would
+  easily fit in a single byte.
+
+- Providing hPa rather than kPa seems to be more common.
+
 - Readings for pressure and NO<sub>2</sub> can, if all is well, not be negative.
 
 - After determining that the readings are okay, one should stop sending the minimum and maximum values.
