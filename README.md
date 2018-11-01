@@ -1,8 +1,8 @@
 # Archived code for 2016 Libelium Waspmote PRO v1.2 with Gas Sensor Board v2.0 and LoRaWAN
 
 This is just an archive of an Arduino sketch (and its required development tools), used to get more details from a
-Libelium Waspmote "Plug & Sense!" Smart Environment device as used by the City of Haarlem from May 2016 until
-October 2017.
+Libelium Waspmote "Plug & Sense!" Smart Environment device as [used](./docs/haarlem-waspmote-installation-20160725.jpg)
+by the City of Haarlem from May 2016 until October 2017.
 
 ## Contents
 
@@ -66,10 +66,15 @@ the mean, this sketch determines the median to discard the outliers, and also se
 analysis. But as even temperature measurements would often show large variations within only 10 seconds, the device was
 declared crap and this sketch has never been used in the field.
 
+[![July 25th 2016 measurements](./docs/haarlem-measurements-20160725.png)](./docs/haarlem-measurements-20160725.png)
+
 So, I do not endorse the early 2016 device, as measurements for our two test devices were really bad. Later models may
-be okay, but I have not used those. The control hardware is quite nice, with great support for deep sleep and watchdog
+be okay, but I have not used those. The internal hardware is quite nice, with great support for deep sleep and watchdog
 timers, and even offering a real-time clock. So if the sensors have meanwhile improved, and when not using generated
 code, then this might be a nice unit.
+
+<a href="./docs/waspmote-internals-1.jpg"><img width="250" hspace="10" src="./docs/waspmote-internals-1.jpg" alt="Waspmote internals"></a>
+<a href="./docs/waspmote-internals-2.jpg"><img width="250" hspace="10" src="./docs/waspmote-internals-2.jpg" alt="Waspmote internals"></a>
 
 In March 2017, Smart Environment (which is the Plug & Sense! version for the Gases sensor board) was discontinued, in
 favor of Smart Environment PRO (Gases PRO) and Smart Cities PRO, both of which were already available when our supplier
