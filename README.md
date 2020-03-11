@@ -92,7 +92,7 @@ Socket configuration for this sketch:
 
 - A: temperature, 9203, MCP9700A
 - B: atmospheric pressure, 9250, MPX4115A
-- D: NO<sub>2</sub> 9238-Pb, MiCS-2714; https://www.libelium.com/forum/viewtopic.php?f=28&t=22007&p=63548#p63568
+- D: NO<sub>2</sub> 9238-Pb, MiCS-2714 ([according to Libelium's support forum](https://www.libelium.com/forum/viewtopic.php?f=28&t=22007&p=63548#p63568))
 
 The LoRaWAN module identified itself as `RN2483 1.0.1 Dec 15 2015 09:38:09`.
 
@@ -203,8 +203,8 @@ function Decoder(bytes, port) {
 ### RN2483 known issues
 
 - After a factory reset, make sure to set (dummy) values for DevAddr, AppSKey and NwkSKey, for otherwise calling
-  `LoRaWAN.saveConfig` (actually `mac save`) does not save the OTAA settings, and/or `LoRaWAN.joinABP` does not
-  recognize that they were saved.
+  `LoRaWAN.saveConfig` (actually `mac save`) does not save the OTAA settings, and/or `LoRaWAN.joinABP` [does not
+  recognize that they were saved](https://www.thethingsnetwork.org/forum/t/11192/47).
 
 - Limited tests show that joining on low data rates might be troublesome, and that ADR might not be working. This has
   not been investigated.
