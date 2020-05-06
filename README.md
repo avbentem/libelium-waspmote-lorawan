@@ -14,6 +14,7 @@ by the City of Haarlem from May 2016 until October 2017.
   - [Registering with The Things Network](#registering-with-the-things-network)
   - [Uplink payload format](#uplink-payload-format)
   - [TTN Payload function](#ttn-payload-function)
+  - [TTN HTTP Integration with Google Sheets](#ttn-http-integration-with-google-sheets)
   - [RN2483 known issues](#rn2483-known-issues)
 - [Programming using the Waspmote PRO IDE v04](#programming-using-the-waspmote-pro-ide-v04)
   - [Installing the correct IDE](#installing-the-correct-ide)
@@ -119,6 +120,8 @@ Also, the NO<sub>2</sub> sensor needs to be pre-heated for at least 30 seconds.
    tool did not support LoRaWAN, and the code yields a very verbose text-based payload, this is only included as
    documentation.
 
+ - [src/google-sheets](./src/google-sheets): an example Google Apps Script to use along with the TNN HTTP Integration. 
+
  - [tools](./tools): the legacy Libelium Waspmote PRO IDE for Windows and OS X/macOS, and USB drivers.
 
  - [docs](./docs): some legacy Libelium documentation, valid for this configuration.
@@ -199,6 +202,10 @@ function Decoder(bytes, port) {
   }
 }
 ```
+
+### TTN HTTP Integration with Google Sheets 
+
+The TTN HTTP Integration [can be set up to push data to Google Sheets](./src/google-sheets/README.md).
 
 ### RN2483 known issues
 
